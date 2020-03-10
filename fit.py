@@ -13,6 +13,12 @@ def _exponential_simple(x, a, b):
 def _power_of_two(x, a, b):
     return a*np.power(2, b*x)
 
+def _sigmoid(x,a,b,c):
+    return a/(1 + np.exp(-b*(x - c)))
+
+def _sigmoid_simple(x,a):
+    return 1/(1 + np.exp(-a*x))
+
 class CovidFitFunctions:
     def __init__(self):
         self.functions = {}
@@ -23,10 +29,14 @@ class CovidFitFunctions:
         self.functions['EXP'] = _exponential
         self.functions['EXPSIMPLE'] = _exponential_simple
         self.functions['POWEROFTWO'] = _power_of_two
+        self.functions['LOGISTIC'] = _sigmoid
+        self.functions['LOGISTICSIMPLE'] = _sigmoid_simple
 
         self.funrepr['EXP'] = "y = {0}*exp^{1}*x  +  {2}"
         self.funrepr['EXPSIMPLE'] = "y = {0}*exp^{1}*x"
         self.funrepr['POWEROFTWO'] = "y = {0}*2^{1}*x"
+        self.funrepr['LOGISTIC'] = "y =  {0}/(1 + np.exp(-{1}*(x - {2})))"
+        self.funrepr['LOGISTICSIMPLE'] = "y =  1/(1 + np.exp(-{0}*x))"
 
 
     def fitData(self, x, yn, function_label):
