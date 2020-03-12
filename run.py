@@ -1,4 +1,4 @@
-from reader import DataReader
+from reader import DataReader,DataReportCSVReaderWriter
 from business import ExtractCovidData
 from fit import CovidFitFunctions
 from stats import ComputeStat
@@ -8,7 +8,7 @@ from prediction import CovidPrediction
 
 from datetime import datetime
 
-from os import path,mkdir
+from os import path,mkdir,remove
 
 import configparser
 
@@ -17,26 +17,29 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read('config.ini')
 
-    assert('COVID_DATA' in config and 'APP' in config)
+    assert('COVID_DATA' in config and 'RUN' in config and 'CONFIGREPORT' in config)
     assert('url' in config['COVID_DATA'] and 'datacolumns' in config['COVID_DATA'])
-    assert ('reader_mode' in config['APP'] and 'report_dir' in config['APP'] and\
-                    'filereportname' in config['APP'] and 'showplot' in config['APP'] and\
-                        'rawfilename' in config['APP'] and 'fun' in config['APP']\
-                            and 'predictionfilename' in config['APP'])
+    assert('addreportcsv' in config['CONFIGREPORT'] and 'filereportcsvname' in config['CONFIGREPORT'])
+    assert ('reader_mode' in config['RUN'] and 'report_dir' in config['RUN'] and\
+                    'filereportname' in config['RUN'] and 'showplot' in config['RUN'] and\
+                        'rawfilename' in config['RUN'] and 'fun' in config['RUN']\
+                            and 'predictionfilename' in config['RUN'])
 
     data_columns = config['COVID_DATA']['datacolumns'].split(",")
 
-    base_dir_report = config['APP']['report_dir']
+    base_dir_report = config['RUN']['report_dir']
 
-    filereportname = config['APP']['filereportname']
-    rawfilename = config['APP']['rawfilename']
-    predictionfilename = config['APP']['predictionfilename']
+    filereportname = config['RUN']['filereportname']
+    rawfilename = config['RUN']['rawfilename']
+    predictionfilename = config['RUN']['predictionfilename']
 
-    funname = config['APP']['fun']
+    funname = config['RUN']['fun']
+
+    filereportcsvname = config['CONFIGREPORT']['filereportcsvname']
     #############  #############
 
     ## PREPARE ##
-    reader = DataReader(config['COVID_DATA']['url'],config['APP']['reader_mode'])
+    reader = DataReader(config['COVID_DATA']['url'],config['RUN']['reader_mode'])
     dataextract = ExtractCovidData(data_columns)
     fittingclass = CovidFitFunctions()
     statcalc = ComputeStat()
@@ -50,6 +53,7 @@ if __name__ == "__main__":
     if not path.exists(_reportdir_):
         mkdir(_reportdir_)
 
+    csvreport = DataReportCSVReaderWriter(path.join(base_dir_report,filereportcsvname))
 
     _reportlog_.append(LOGROW.format(dt = str(datetime.now()), tx = "Start Process "+_idelab_))
     _reportlog_.append(LOGROW.format(dt=str(datetime.now()), tx="Dir Report" + _reportdir_))
@@ -70,6 +74,17 @@ if __name__ == "__main__":
     ## DATA FIT  AND PREDICTION ##
     _predictionlog_ = []
 
+    dfreport = None
+    new_row = []
+    if config['CONFIGREPORT']['addreportcsv'] == "1":
+        if not path.exists(path.join(base_dir_report, filereportcsvname)):
+            dfreport = csvreport.createReport()
+        else:
+            dfreport = csvreport.getData()
+            remove(path.join(base_dir_report, filereportcsvname))
+        new_row.append(str(end_date))
+        new_row.append(funname)
+
     for y in y_series:
         yn = y_series[y]
         popt, pcov = fittingclass.fitData(x, yn, funname)
@@ -83,10 +98,17 @@ if __name__ == "__main__":
             _predictionlog_.append(PREDICTIONLOG.format(subj = y, pd = d, val = str(round(data_prediction[d],5))))
 
 
-        if config['APP']['showplot'] == "1":
+
+        if config['RUN']['showplot'] == "1":
             _funlabel_ = fittingclass.getFunRepr(funname, popt)
             _funlabel_ += "  R2: "+str(round(r_squared,3))
             Plotter.plot_covid_data(x, yn, y, fittingclass.getFun(funname), popt, _funlabel_)
+        if config['CONFIGREPORT']['addreportcsv'] == "1":
+            new_row.append("#".join([str(round(p,5)) for p in popt]))
+
+    if config['CONFIGREPORT']['addreportcsv'] == "1":
+        dfreport.loc[len(dfreport)] = new_row
+        csvreport.saveData(dfreport)
 
     _reportlog_.append(LOGROW.format(dt=str(datetime.now()), tx="End Process "+_idelab_))
 
