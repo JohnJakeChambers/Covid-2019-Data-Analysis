@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy import stats
+from scipy.optimize import fsolve
 
 ### UPDATE - 8 March 2020 ###
 ### In this period, the spreading of Covid-2019 follows exponential logics ###
@@ -48,3 +50,9 @@ class CovidFitFunctions:
     def getFunRepr(self, label, format_arg):
         format_arg_round = (round(a,2) for a in format_arg)
         return self.funrepr[label].format(*format_arg_round)
+
+
+class CurveReport:
+    def getCurve(self, x,y):
+        slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+        return slope,intercept,r_value,p_value,std_err
