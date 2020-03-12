@@ -17,7 +17,8 @@ The config.ini contains all the program variables:
 - filereportname, predictionfilename: The filename you want to assing to the Report log and to the Prediction Log.
 - rawfilename: Once the program read the input, it will be saved in this file.
 - showplot: The value should be 0 or 1. If the value is 1 then the plot module is launched and it shows on video the results of curve fitting.
-
+- filereportcsvname: A csv file that contains each result of curve processing
+- addreportcsv: The value should be 0 or 1. If the value is 1 then the result will be added to the filereportcsvname
 
 
 
